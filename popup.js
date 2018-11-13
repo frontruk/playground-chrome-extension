@@ -144,34 +144,64 @@ chrome.tabs.getAllInWindow(null, function(tabs){
 
 
 });
-
+function makeXhrRequest(method, url, token) {
+    return new Promise((resolve, reject) => {
+        let xhr = new XMLHttpRequest();
+    xhr.open(method, url, true);
+   // xhr.setRequestHeader('Authorization', 'Bearer ' + token)
+    xhr.onload = function(){
+        if (xhr.status >= 200 && xhr.status < 300){
+            return resolve(xhr.response);
+        } else {
+            reject(Error({
+                status: xhr.status,
+                statusTextInElse: xhr.statusText
+            }))
+        }
+    }
+    xhr.onerror = function(){
+        reject(Error({
+            status: xhr.status,
+            statusText: xhr.statusText
+        }))
+    }
+    xhr.send()
+})
+}
 function checkingNext(){
     chrome.tabs.getSelected(null, function(tab){
         console.log(tab);
 
 
-        chrome.tabs.update(tab.id, {url: "http://www.google.com/", active: true}, function(tab1) {
+        // makeXhrRequest('GET', requestUrl, token)
+        //     .then((data) => {
+        //         let parsedData = JSON.parse(data)
+        //         console.log('parsedData', parsedData)
+        //     })
 
-            // add listener so callback executes only if page loaded. otherwise calls instantly
-            var listener = function(tabId, changeInfo, tab) {
 
-                if (tab.id == tab1.id && changeInfo.status === 'complete') {
-                    // remove listener, so only run once
-
-                    // var tab = tabs[0];
-                    currentTab = tab1; // used in later calls to get tab info
-
-                    var filename = getFilename(tab1.url);
-                    // alert('Hello world!')
-                    CaptureAPI.captureToFiles(tab1, filename, displayCaptures,
-                        errorHandler, progress, splitnotifier);
-
-                    chrome.tabs.onUpdated.removeListener(listener);
-                    // do stuff
-                }
-            }
-            chrome.tabs.onUpdated.addListener(listener);
-        });
+        // chrome.tabs.update(tab.id, {url: "http://www.google.com/", active: true}, function(tab1) {
+        //
+        //     // add listener so callback executes only if page loaded. otherwise calls instantly
+        //     var listener = function(tabId, changeInfo, tab) {
+        //
+        //         if (tab.id == tab1.id && changeInfo.status === 'complete') {
+        //             // remove listener, so only run once
+        //
+        //             // var tab = tabs[0];
+        //             currentTab = tab1; // used in later calls to get tab info
+        //
+        //             var filename = getFilename(tab1.url);
+        //             // alert('Hello world!')
+        //             CaptureAPI.captureToFiles(tab1, filename, displayCaptures,
+        //                 errorHandler, progress, splitnotifier);
+        //
+        //             chrome.tabs.onUpdated.removeListener(listener);
+        //             // do stuff
+        //         }
+        //     }
+        //     chrome.tabs.onUpdated.addListener(listener);
+        // });
     });
 }
 
@@ -179,7 +209,8 @@ function  setup(){
         let bgpage = chrome.extension.getBackgroundPage();
         let word = '2222';
 
-        let url = 'https://swapi.co/api/people/1';
+        let url = 'http://localhost:8090/api/getNextPage';
+
 
         loadJSON(url,gotData);
 
@@ -187,12 +218,11 @@ function  setup(){
         function gotData(data){
             createP(data.name);
 
-
             chrome.tabs.getSelected(null, function(tab){
                 console.log(tab);
 
 
-                chrome.tabs.update(tab.id, {url: "http://www.christarasovs.com/", active: true}, function(tab1) {
+                chrome.tabs.update(tab.id, {url: data.urls, active: true}, function(tab1) {
 
                     // add listener so callback executes only if page loaded. otherwise calls instantly
                     var listener = function(tabId, changeInfo, tab) {
